@@ -8,7 +8,10 @@ by changing those files in `/path/to/your/conda/envs/qiime2-version/lib/python3.
 
 *\_\_init\_\_.py* : add a new function `denoise_ccs`
 
-*plugin_setup.py* : register the new function `q2_dada2.denoise_ccs` and add some explicit parameters such as `min_len` or change the default explicit value such as `min_fold_parent_over_abundance` to **3.5**
+*plugin_setup.py* : 
+
+  1. register the new function `q2_dada2.denoise_ccs` 
+  2. add some explicit parameters such as `min_len` or change the default explicit value such as `min_fold_parent_over_abundance` to **3.5**
 
 *\_denoise.py* : 
 
@@ -27,3 +30,5 @@ then add a new Rscript in `/path/to/your/conda/envs/qiime2-version/bin`
       2. add *minLen*=*minLen*, *minQ*=*3*
       
   3. change some implicit in function `filterAndTrim`: add *errorEstimationFunction*=*dada2:::PacBioErrfun*
+
+All parameters used in those files are referenced from [Callahan et al., 2019](https://doi.org/10.1093/nar/gkz569) and https://github.com/benjjneb/LRASManuscript
