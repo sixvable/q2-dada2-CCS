@@ -32,3 +32,5 @@ then add a new Rscript in `/path/to/your/conda/envs/qiime2-version/bin`
   3. change some implicit in function `filterAndTrim`: add *errorEstimationFunction*=*dada2:::PacBioErrfun*
 
 All parameters used in those files are referenced from [Callahan et al., 2019](https://doi.org/10.1093/nar/gkz569) and https://github.com/benjjneb/LRASManuscript
+
+remember to trim the primer and change the oriente using `dada2::removePrimers` before denoise.
