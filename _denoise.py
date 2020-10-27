@@ -352,7 +352,7 @@ def _denoise_ccs(demultiplexed_seqs, trunc_len, trim_left, max_ee, trunc_q,
     with tempfile.TemporaryDirectory() as temp_dir_name:
         biom_fp = os.path.join(temp_dir_name, 'output.tsv.biom')
         track_fp = os.path.join(temp_dir_name, 'track.tsv')
-        cmd = ['run_dada_single.R',
+        cmd = ['run_dada_ccs.R',
                str(demultiplexed_seqs), biom_fp, track_fp, temp_dir_name,
                str(trunc_len), str(trim_left), str(max_ee), str(trunc_q),
                str(max_len), str(pooling_method), str(chimera_method),

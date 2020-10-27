@@ -405,7 +405,7 @@ plugin.methods.register_function(
             'tested as chimeric, expressed as a fold-change versus the '
             'abundance of the sequence being tested. Values should be greater '
             'than or equal to 1 (i.e. parents should be more abundant than '
-            'the sequence being tested). This parameter has no effect if '
+            'the sequence being tested). Suggest 3.5. This parameter has no effect if '
             'chimera_method is "none".',
         'n_threads': 'The number of threads to use for multithreaded '
                      'processing. If 0 is provided, all available cores will '
