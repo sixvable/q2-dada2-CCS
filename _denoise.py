@@ -79,6 +79,8 @@ _valid_inputs = {
     'demultiplexed_seqs': _SKIP,
     'homopolymer_gap_penalty': _SKIP,
     'band_size': _SKIP,
+    'front': _SKIP,
+    'adapter': _SKIP,
 }
 
 
@@ -362,7 +364,7 @@ def denoise_pyro(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
 
 
 def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
-                 trunc_len: int, trim_left: int = 0, max_ee: float = 2.0,
+                 trunc_len: int, front: str, adapter: str, trim_left: int = 0, max_ee: float = 2.0,
                  trunc_q: int = 2, min_len: int = 20, max_len: int = 0,
                  pooling_method: str = 'independent',
                  chimera_method: str = 'consensus',
@@ -385,14 +387,16 @@ def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
         hashed_feature_ids=hashed_feature_ids,
         homopolymer_gap_penalty='NULL',
         band_size='32',
-        min_len=min_len)
+        min_len=min_len,
+        front=front,
+        adapter=adapter)
 
 
 def _denoise_ccs(demultiplexed_seqs, trunc_len, trim_left, max_ee, trunc_q,
                     max_len, pooling_method, chimera_method,
                     min_fold_parent_over_abundance,
                     n_threads, n_reads_learn, hashed_feature_ids,
-                    homopolymer_gap_penalty, band_size, min_len):
+                    homopolymer_gap_penalty, band_size, min_len, front, adapter):
     _check_inputs(**locals())
     if trunc_len != 0 and trim_left >= trunc_len:
         raise ValueError("trim_left (%r) must be smaller than trunc_len (%r)"
@@ -417,7 +421,7 @@ def _denoise_ccs(demultiplexed_seqs, trunc_len, trim_left, max_ee, trunc_q,
                str(max_len), str(pooling_method), str(chimera_method),
                str(min_fold_parent_over_abundance), str(n_threads),
                str(n_reads_learn), str(homopolymer_gap_penalty),
-               str(band_size), str(min_len), nop_fp]
+               str(band_size), str(min_len), nop_fp, str(front), str(adapter)]
         try:
             run_commands([cmd])
         except subprocess.CalledProcessError as e:

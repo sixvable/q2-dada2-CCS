@@ -6,7 +6,7 @@
 # table. It is intended for use with the QIIME2 plugin
 # for DADA2.
 #
-# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv filtered_dir 200 0 2.0 2 Inf pooled 1.0 0 1000000 NULL 32 20 primer_removed_dir
+# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv filtered_dir 200 0 2.0 2 Inf pooled 1.0 0 1000000 NULL 32 20 primer_removed_dir front adapter
 ####################################################
 
 ####################################################
@@ -110,6 +110,13 @@
 #               for the full workflow. Currently they remain after the script finishes.
 #               Directory must already exist.
 #    Ex: path/to/dir/with/fastqgzs/primerremoved
+#
+# 19) Primer front of Pacbio CCS sequences
+#    Ex: 'AGRGTTYGATYMTGGCTCAG'(27F)
+#
+# 20) Primer adapter of Pacbio CCS sequences
+#    Ex: 'RGYTACCTTGTTACGACTT'(1492R)
+
 
 cat(R.version$version.string, "\n")
 errQuit <- function(mesg, status=1) { message("Error: ", mesg); q(status=status) }
@@ -137,7 +144,8 @@ BAND_SIZE <- as.integer(args[[16]])
 # For Pacbio CCS
 minLen <- as.numeric(args[[17]])
 primerremoved.dir <- args[[18]]
-
+primerF <- args[[19]]
+primerR <- args[[20]]
 ### VALIDATE ARGUMENTS ###
 
 # Input directory is expected to contain .fastq.gz file(s)
@@ -183,7 +191,7 @@ cat("DADA2:", as.character(packageVersion("dada2")), "/",
 ### Remove Primers ###
 cat("1) Removing Primers\n")
 nop <- file.path(primerremoved.dir, basename(unfilts))
-prim <- suppressWarnings(removePrimers(unfilts, nop, "AGRGTTYGATYMTGGCTCAG", dada2:::rc("RGYTACCTTGTTACGACTT"),
+prim <- suppressWarnings(removePrimers(unfilts, nop, primerF, dada2:::rc(primerR),
                                        orient = TRUE, verbose = TRUE))
 cat(ifelse(file.exists(nop), ".", "x"), sep="")
 nop <- list.files(primerremoved.dir, pattern=".fastq.gz$", full.names=TRUE)

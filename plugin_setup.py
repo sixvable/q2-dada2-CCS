@@ -342,6 +342,8 @@ plugin.methods.register_function(
     inputs={'demultiplexed_seqs': SampleData[SequencesWithQuality]},
     parameters={'trunc_len': qiime2.plugin.Int,
                 'trim_left': qiime2.plugin.Int,
+                'front':qiime2.plugin.Str,
+                'adapter':qiime2.plugin.Str,
                 'max_ee': qiime2.plugin.Float,
                 'trunc_q': qiime2.plugin.Int,
                 'min_len': qiime2.plugin.Int,
@@ -374,6 +376,10 @@ plugin.methods.register_function(
                      'low quality. This trims the 5\' end of the '
                      'of the input sequences, which will be the bases that '
                      'were sequenced in the first cycles.',
+        'front': 'Sequence of an adapter ligated to the 5\' end. The adapter '
+                 'and any preceding bases are trimmed.',
+        'adapter': 'Sequence of an adapter ligated to the 3\' end. The adapter '
+                 'and any preceding bases are trimmed.',
         'max_ee': 'Reads with number of expected errors higher than this '
                   'value will be discarded.',
         'trunc_q': 'Reads are truncated at the first instance of a quality '
