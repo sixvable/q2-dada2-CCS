@@ -6,7 +6,7 @@
 # table. It is intended for use with the QIIME2 plugin
 # for DADA2.
 #
-# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv filtered_dir 200 0 2.0 2 Inf pooled 1.0 0 1000000 NULL 32 20
+# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv filtered_dir 200 0 2.0 2 Inf pooled 1.0 0 1000000 NULL 32 20 primer_removed_dir
 ####################################################
 
 ####################################################
@@ -14,6 +14,7 @@
 ####################################################
 # NOTE: All numeric arguments should be zero or positive.
 # NOTE: All numeric arguments save maxEE are expected to be integers.
+# NOTE: Currently the primer_removed_dir must already exist.
 # NOTE: Currently the filterered_dir must already exist.
 # NOTE: ALL ARGUMENTS ARE POSITIONAL!
 #
@@ -104,6 +105,11 @@
 # 17) minLen - Remove reads with length less than minLen. minLen is enforced after trimming and truncation.
 #             Default 20.
 #    Ex: 1000
+#
+# 18) File path to directory in which to write the primerremoved .fastq.gz files. These files are intermediate
+#               for the full workflow. Currently they remain after the script finishes.
+#               Directory must already exist.
+#    Ex: path/to/dir/with/fastqgzs/primerremoved
 
 cat(R.version$version.string, "\n")
 errQuit <- function(mesg, status=1) { message("Error: ", mesg); q(status=status) }
@@ -130,6 +136,7 @@ HOMOPOLYMER_GAP_PENALTY <- if (args[[15]]=='NULL') NULL else as.integer(args[[15
 BAND_SIZE <- as.integer(args[[16]])
 # For Pacbio CCS
 minLen <- as.numeric(args[[17]])
+primerremoved.dir <- args[[18]]
 
 ### VALIDATE ARGUMENTS ###
 
@@ -173,10 +180,21 @@ cat("DADA2:", as.character(packageVersion("dada2")), "/",
     "Rcpp:", as.character(packageVersion("Rcpp")), "/",
     "RcppParallel:", as.character(packageVersion("RcppParallel")), "\n")
 
+### Remove Primers ###
+cat("1) Removing Primers\n")
+nop <- file.path(primerremoved.dir, basename(unfilts))
+prim <- suppressWarnings(removePrimers(unfilts, nop, "AGRGTTYGATYMTGGCTCAG", dada2:::rc("RGYTACCTTGTTACGACTT"),
+                                       orient = TRUE, verbose = TRUE))
+cat(ifelse(file.exists(nop), ".", "x"), sep="")
+nop <- list.files(primerremoved.dir, pattern=".fastq.gz$", full.names=TRUE)
+if(length(nop) == 0) { # All reads were filtered out
+  errQuit("No reads passed the Removing Primers step  (Did you select the right primers?)", status=2)
+}
+
 ### TRIM AND FILTER ###
-cat("1) Filtering ")
-filts <- file.path(filtered.dir, basename(unfilts))
-out <- suppressWarnings(filterAndTrim(unfilts, filts, truncLen=truncLen, trimLeft=trimLeft,
+cat("2) Filtering\n")
+filts <- file.path(filtered.dir, basename(nop))
+out <- suppressWarnings(filterAndTrim(nop, filts, truncLen=truncLen, trimLeft=trimLeft,
                                       maxEE=maxEE, truncQ=truncQ, rm.phix=FALSE,
                                       multithread=multithread, minLen=minLen, maxLen=maxLen, minQ=3))
 cat(ifelse(file.exists(filts), ".", "x"), sep="")
@@ -188,14 +206,14 @@ if(length(filts) == 0) { # All reads were filtered out
 
 ### LEARN ERROR RATES ###
 # Dereplicate enough samples to get nreads.learn total reads
-cat("2) Learning Error Rates\n")
+cat("3) Learning Error Rates\n")
 err <- suppressWarnings(learnErrors(filts, nreads=nreads.learn,errorEstimationFunction=dada2:::PacBioErrfun, multithread=multithread,
                    HOMOPOLYMER_GAP_PENALTY=HOMOPOLYMER_GAP_PENALTY, BAND_SIZE=BAND_SIZE))
 
 ### PROCESS ALL SAMPLES ###
 # Loop over rest in streaming fashion with learned error rates
 dds <- vector("list", length(filts))
-cat("3) Denoise samples ")
+cat("4) Denoise samples ")
 for(j in seq(length(filts))) {
   drp <- derepFastq(filts[[j]])
   dds[[j]] <- dada(drp, err=err, multithread=multithread,
@@ -230,7 +248,7 @@ if(poolMethod == "pseudo") {
 seqtab <- makeSequenceTable(dds)
 
 ### Remove chimeras
-cat("4) Remove chimeras (method = ", chimeraMethod, ")\n", sep="")
+cat("5) Remove chimeras (method = ", chimeraMethod, ")\n", sep="")
 if(chimeraMethod %in% c("pooled", "consensus")) {
   seqtab.nochim <- removeBimeraDenovo(seqtab, method=chimeraMethod, minFoldParentOverAbundance=minParentFold, multithread=multithread)
 } else { # No chimera removal, copy seqtab to seqtab.nochim
@@ -238,10 +256,10 @@ if(chimeraMethod %in% c("pooled", "consensus")) {
 }
 
 ### REPORT READ FRACTIONS THROUGH PIPELINE ###
-cat("5) Report read numbers through the pipeline\n")
+cat("6) Report read numbers through the pipeline\n")
 # Handle edge cases: Samples lost in filtering; One sample
-track <- cbind(out, matrix(0, nrow=nrow(out), ncol=2))
-colnames(track) <- c("input", "filtered", "denoised", "non-chimeric")
+track <- cbind(prim,out[ ,2], matrix(0, nrow=nrow(out), ncol=2))
+colnames(track) <- c("input", "primer-removed","filtered", "denoised", "non-chimeric")
 passed.filtering <- track[,"filtered"] > 0
 track[passed.filtering,"denoised"] <- rowSums(seqtab)
 track[passed.filtering,"non-chimeric"] <- rowSums(seqtab.nochim)
@@ -250,7 +268,7 @@ write.table(track, out.track, sep="\t", row.names=TRUE, col.names=NA,
 
 ### WRITE OUTPUT AND QUIT ###
 # Formatting as tsv plain-text sequence table table
-cat("6) Write output\n")
+cat("7) Write output\n")
 seqtab.nochim <- t(seqtab.nochim) # QIIME has OTUs as rows
 col.names <- basename(filts)
 col.names[[1]] <- paste0("#OTU ID\t", col.names[[1]])
