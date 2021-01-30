@@ -61,6 +61,7 @@ _valid_inputs = {
     'trim_left': _WHOLE_NUM,
     'trim_left_f': _WHOLE_NUM,
     'trim_left_r': _WHOLE_NUM,
+    'max_mismatch': _WHOLE_NUM,
     'max_ee': _NAT_NUM,
     'max_ee_f': _NAT_NUM,
     'max_ee_r': _NAT_NUM,
@@ -81,6 +82,7 @@ _valid_inputs = {
     'band_size': _SKIP,
     'front': _SKIP,
     'adapter': _SKIP,
+    'indels': _SKIP,
 }
 
 
@@ -364,7 +366,8 @@ def denoise_pyro(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
 
 
 def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
-                 trunc_len: int, front: str, adapter: str, trim_left: int = 0, max_ee: float = 2.0,
+                 front: str, adapter: str,  max_mismatch: int = 2, indels: bool = False,
+                 trunc_len: int = 0, trim_left: int = 0, max_ee: float = 2.0,
                  trunc_q: int = 2, min_len: int = 20, max_len: int = 0,
                  pooling_method: str = 'independent',
                  chimera_method: str = 'consensus',
@@ -374,10 +377,15 @@ def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
                  ) -> (biom.Table, DNAIterator, qiime2.Metadata):
     return _denoise_ccs(
         demultiplexed_seqs=demultiplexed_seqs,
+        front=front,
+        adapter=adapter,
+        max_mismatch=max_mismatch,
+        indels=indels,
         trunc_len=trunc_len,
         trim_left=trim_left,
         max_ee=max_ee,
         trunc_q=trunc_q,
+        min_len=min_len,
         max_len=max_len,
         pooling_method=pooling_method,
         chimera_method=chimera_method,
@@ -386,17 +394,15 @@ def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
         n_reads_learn=n_reads_learn,
         hashed_feature_ids=hashed_feature_ids,
         homopolymer_gap_penalty='NULL',
-        band_size='32',
-        min_len=min_len,
-        front=front,
-        adapter=adapter)
+        band_size='32')
 
 
-def _denoise_ccs(demultiplexed_seqs, trunc_len, trim_left, max_ee, trunc_q,
-                    max_len, pooling_method, chimera_method,
+def _denoise_ccs(demultiplexed_seqs, front, adapter, max_mismatch,
+                    indels, trunc_len, trim_left, max_ee, trunc_q,
+                    min_len, max_len, pooling_method, chimera_method,
                     min_fold_parent_over_abundance,
                     n_threads, n_reads_learn, hashed_feature_ids,
-                    homopolymer_gap_penalty, band_size, min_len, front, adapter):
+                    homopolymer_gap_penalty, band_size):
     _check_inputs(**locals())
     if trunc_len != 0 and trim_left >= trunc_len:
         raise ValueError("trim_left (%r) must be smaller than trunc_len (%r)"
@@ -416,12 +422,13 @@ def _denoise_ccs(demultiplexed_seqs, trunc_len, trim_left, max_ee, trunc_q,
             os.mkdir(fp)
 
         cmd = ['run_dada_ccs.R',
-               str(demultiplexed_seqs), biom_fp, track_fp, filt_fp,
+               str(demultiplexed_seqs), biom_fp, track_fp, nop_fp, filt_fp,
+               str(front), str(adapter), str(max_mismatch), str(indels),
                str(trunc_len), str(trim_left), str(max_ee), str(trunc_q),
-               str(max_len), str(pooling_method), str(chimera_method),
-               str(min_fold_parent_over_abundance), str(n_threads),
-               str(n_reads_learn), str(homopolymer_gap_penalty),
-               str(band_size), str(min_len), nop_fp, str(front), str(adapter)]
+               str(min_len), str(max_len), str(pooling_method),
+               str(chimera_method), str(min_fold_parent_over_abundance),
+               str(n_threads), str(n_reads_learn), str(homopolymer_gap_penalty),
+               str(band_size)]
         try:
             run_commands([cmd])
         except subprocess.CalledProcessError as e:

@@ -2,7 +2,7 @@
 
 make q2-dada2 support Pacbio CCS
 
-test at **qiime2-2020.8**
+test at **qiime2-2020.11**
 
 by changing those files in `/path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/`
 

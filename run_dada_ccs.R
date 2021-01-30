@@ -6,7 +6,8 @@
 # table. It is intended for use with the QIIME2 plugin
 # for DADA2.
 #
-# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv filtered_dir 200 0 2.0 2 Inf pooled 1.0 0 1000000 NULL 32 20 primer_removed_dir front adapter
+# Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv primer_removed_dir filtered_dir
+# front adapter 2 FALSE 0 0 2.0 2 20 Inf pseudo pooled 1.0 0 1000000 NULL 32
 ####################################################
 
 ####################################################
@@ -29,36 +30,60 @@
 # 3) File path to tracking tsv file. If already exists, will be overwritte.
 #    Ex: path/to/tracking_stats.tsv
 #
-# 4) File path to directory in which to write the filtered .fastq.gz files. These files are intermediate
+# 4) File path to directory in which to write the primer.removed .fastq.gz files. These files are intermediate
+#               for the full workflow. Currently they remain after the script finishes.
+#               Directory must already exist.
+#    Ex: path/to/dir/with/fastqgzs/primerremoved
+#
+# 5) File path to directory in which to write the filtered .fastq.gz files. These files are intermediate
 #               for the full workflow. Currently they remain after the script finishes.
 #               Directory must already exist.
 #    Ex: path/to/dir/with/fastqgzs/filtered
 #
-### FILTERING ARGUMENTS ###
+### PRIMER REMOVING ARGUMENTS ###
 #
-# 5) truncLen - The position at which to truncate reads. Reads shorter
-#               than truncLen will be discarded.
-#               Special values: 0 - no truncation or length filtering.
-#    Ex: 150
+# 6) primerF - Primer front of Pacbio CCS sequences.
+#    Ex: 'AGRGTTYGATYMTGGCTCAG'
 #
-# 6) trimLeft - The number of nucleotides to remove from the start of
-#               each read. Should be less than truncLen for obvious reasons.
-#    Ex: 0
+# 7) primerR - Primer adapter of Pacbio CCS sequences.
+#    Ex: 'RGYTACCTTGTTACGACTT'
 #
-# 7) maxEE - Reads with expected errors higher than maxEE are discarded.
-#    Ex: 2.0
-#
-# 8) truncQ - Reads are truncated at the first instance of quality score truncQ.
-#                If the read is then shorter than truncLen, it is discarded.
+# 8) maxMismatch - The number of mismatches to tolerate when matching
+#                  reads to primer sequences.
 #    Ex: 2
 #
-# 9) maxLen - Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.
+# 9) indels - Allow insertions or deletions of bases when matching adapters.
+#    Ex: FALSE
+#
+### FILTERING ARGUMENTS ###
+#
+# 10) truncLen - The position at which to truncate reads. Reads shorter
+#               than truncLen will be discarded.
+#               Special values: 0 - no truncation or length filtering.
+#     Ex: 150
+#
+# 11) trimLeft - The number of nucleotides to remove from the start of
+#               each read. Should be less than truncLen for obvious reasons.
+#     Ex: 0
+#
+# 12) maxEE - Reads with expected errors higher than maxEE are discarded.
+#     Ex: 2.0
+#
+# 13) truncQ - Reads are truncated at the first instance of quality score truncQ.
+#                If the read is then shorter than truncLen, it is discarded.
+#     Ex: 2
+#
+# 14) minLen - Remove reads with length shorter than minLen. minLen is enforced after trimming and truncation.
+#              Default Inf - no maximum.
+#     Ex: 20
+#
+# 15) maxLen - Remove reads with length greater than maxLen. maxLen is enforced on the raw reads.
 #             Default Inf - no maximum.
 #    Ex: 300
 #
 ### SENSITIVITY ARGUMENTS ###
 #
-# 10) poolMethod - The method used to pool (or not) samples during denoising.
+# 16) poolMethod - The method used to pool (or not) samples during denoising.
 #             Valid options are:
 #               independent: (Default) No pooling, samples are denoised indpendently.
 #               pseudo: Samples are "pseudo-pooled" for denoising.
@@ -67,14 +92,14 @@
 #
 ### CHIMERA ARGUMENTS ###
 #
-# 11) chimeraMethod - The method used to remove chimeras. Valid options are:
+# 17) chimeraMethod - The method used to remove chimeras. Valid options are:
 #               none: No chimera removal is performed.
 #               pooled: All reads are pooled prior to chimera detection.
 #               consensus: Chimeras are detect in samples individually, and a consensus decision
 #                           is made for each sequence variant.
 #    Ex: consensus
 #
-# 12) minParentFold - The minimum abundance of potential "parents" of a sequence being
+# 18) minParentFold - The minimum abundance of potential "parents" of a sequence being
 #               tested as chimeric, expressed as a fold-change versus the abundance of the sequence being
 #               tested. Values should be greater than or equal to 1 (i.e. parents should be more
 #               abundant than the sequence being tested).
@@ -82,40 +107,28 @@
 #
 ### SPEED ARGUMENTS ###
 #
-# 13) nthreads - The number of threads to use.
+# 19) nthreads - The number of threads to use.
 #                 Special values: 0 - detect available cores and use all.
 #    Ex: 1
 #
-# 14) nreads_learn - The minimum number of reads to learn the error model from.
+# 20) nreads_learn - The minimum number of reads to learn the error model from.
 #                 Special values: 0 - Use all input reads.
 #    Ex: 1000000
 #
 ### GLOBAL OPTION ARGUMENTS ###
 #
-# 15) HOMOPOLYMER_GAP_PENALTY - The cost of gaps in homopolymer regions (>=3 repeated bases).
+# 21) HOMOPOLYMER_GAP_PENALTY - The cost of gaps in homopolymer regions (>=3 repeated bases).
 #                               Default is NULL, which causes homopolymer gaps
 #                               to be treated as normal gaps.
 #    Ex: -1
 #
-# 16) BAND_SIZE - When set, banded Needleman-Wunsch alignments are performed.
+# 22) BAND_SIZE - When set, banded Needleman-Wunsch alignments are performed.
 #                 The default value of BAND_SIZE is 16. Setting BAND_SIZE to a negative
 #                 number turns off banding (i.e. full Needleman-Wunsch).
 #    Ex: 32
 #
-# 17) minLen - Remove reads with length less than minLen. minLen is enforced after trimming and truncation.
-#             Default 20.
-#    Ex: 1000
 #
-# 18) File path to directory in which to write the primerremoved .fastq.gz files. These files are intermediate
-#               for the full workflow. Currently they remain after the script finishes.
-#               Directory must already exist.
-#    Ex: path/to/dir/with/fastqgzs/primerremoved
-#
-# 19) Primer front of Pacbio CCS sequences
-#    Ex: 'AGRGTTYGATYMTGGCTCAG'(27F)
-#
-# 20) Primer adapter of Pacbio CCS sequences
-#    Ex: 'RGYTACCTTGTTACGACTT'(1492R)
+
 
 
 cat(R.version$version.string, "\n")
@@ -126,26 +139,28 @@ args <- commandArgs(TRUE)
 inp.dir <- args[[1]]
 out.path <- args[[2]]
 out.track <- args[[3]]
-filtered.dir <- args[[4]]
-truncLen <- as.integer(args[[5]])
-trimLeft <- as.integer(args[[6]])
-maxEE <- as.numeric(args[[7]])
-truncQ <- as.integer(args[[8]])
-maxLen <- as.numeric(args[[9]]) # Allows Inf
-poolMethod <- args[[10]]
-chimeraMethod <- args[[11]]
-minParentFold <- as.numeric(args[[12]])
-nthreads <- as.integer(args[[13]])
-nreads.learn <- as.integer(args[[14]])
+primer.removed.dir <- args[[4]]
+filtered.dir <- args[[5]]
+primerF <- args[[6]]
+primerR <- args[[7]]
+maxMismatch <- as.numeric(args[[8]])
+indels <- as.logical(args[[9]])
+truncLen <- as.integer(args[[10]])
+trimLeft <- as.integer(args[[11]])
+maxEE <- as.numeric(args[[12]])
+truncQ <- as.integer(args[[13]])
+minLen <- as.numeric(args[[14]])
+maxLen <- as.numeric(args[[15]]) # Allows Inf
+poolMethod <- args[[16]]
+chimeraMethod <- args[[17]]
+minParentFold <- as.numeric(args[[18]])
+nthreads <- as.integer(args[[19]])
+nreads.learn <- as.integer(args[[20]])
 # The following args are not directly exposed to end users in q2-dada2,
 # but rather indirectly, via the methods `denoise-single` and `denoise-pyro`.
-HOMOPOLYMER_GAP_PENALTY <- if (args[[15]]=='NULL') NULL else as.integer(args[[15]])
-BAND_SIZE <- as.integer(args[[16]])
-# For Pacbio CCS
-minLen <- as.numeric(args[[17]])
-primerremoved.dir <- args[[18]]
-primerF <- args[[19]]
-primerR <- args[[20]]
+HOMOPOLYMER_GAP_PENALTY <- if (args[[21]]=='NULL') NULL else as.integer(args[[21]])
+BAND_SIZE <- as.integer(args[[22]])
+
 ### VALIDATE ARGUMENTS ###
 
 # Input directory is expected to contain .fastq.gz file(s)
@@ -190,11 +205,13 @@ cat("DADA2:", as.character(packageVersion("dada2")), "/",
 
 ### Remove Primers ###
 cat("1) Removing Primers\n")
-nop <- file.path(primerremoved.dir, basename(unfilts))
+nop <- file.path(primer.removed.dir, basename(unfilts))
 prim <- suppressWarnings(removePrimers(unfilts, nop, primerF, dada2:::rc(primerR),
+                                       max.mismatch = maxMismatch, allow.indels = indels,
                                        orient = TRUE, verbose = TRUE))
 cat(ifelse(file.exists(nop), ".", "x"), sep="")
-nop <- list.files(primerremoved.dir, pattern=".fastq.gz$", full.names=TRUE)
+nop <- list.files(primer.removed.dir, pattern=".fastq.gz$", full.names=TRUE)
+cat("\n")
 if(length(nop) == 0) { # All reads were filtered out
   errQuit("No reads passed the Removing Primers step  (Did you select the right primers?)", status=2)
 }
@@ -202,9 +219,11 @@ if(length(nop) == 0) { # All reads were filtered out
 ### TRIM AND FILTER ###
 cat("2) Filtering\n")
 filts <- file.path(filtered.dir, basename(nop))
-out <- suppressWarnings(filterAndTrim(nop, filts, truncLen=truncLen, trimLeft=trimLeft,
-                                      maxEE=maxEE, truncQ=truncQ, rm.phix=FALSE,
-                                      multithread=multithread, minLen=minLen, maxLen=maxLen, minQ=3))
+out <- suppressWarnings(filterAndTrim(nop, filts,
+  truncLen = truncLen, trimLeft = trimLeft,
+  maxEE = maxEE, truncQ = truncQ, rm.phix = FALSE,
+  multithread = multithread, maxLen = maxLen, minLen = minLen, minQ = 3
+))
 cat(ifelse(file.exists(filts), ".", "x"), sep="")
 filts <- list.files(filtered.dir, pattern=".fastq.gz$", full.names=TRUE)
 cat("\n")
@@ -222,6 +241,7 @@ err <- suppressWarnings(learnErrors(filts, nreads=nreads.learn,errorEstimationFu
 # Loop over rest in streaming fashion with learned error rates
 dds <- vector("list", length(filts))
 cat("4) Denoise samples ")
+cat("\n")
 for(j in seq(length(filts))) {
   drp <- derepFastq(filts[[j]])
   dds[[j]] <- dada(drp, err=err, multithread=multithread,

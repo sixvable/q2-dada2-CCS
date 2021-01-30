@@ -340,10 +340,12 @@ plugin.methods.register_function(
 plugin.methods.register_function(
     function=q2_dada2.denoise_ccs,
     inputs={'demultiplexed_seqs': SampleData[SequencesWithQuality]},
-    parameters={'trunc_len': qiime2.plugin.Int,
+    parameters={'front': qiime2.plugin.Str,
+                'adapter': qiime2.plugin.Str,
+                'max_mismatch': qiime2.plugin.Int,
+                'indels': qiime2.plugin.Bool,
+                'trunc_len': qiime2.plugin.Int,
                 'trim_left': qiime2.plugin.Int,
-                'front':qiime2.plugin.Str,
-                'adapter':qiime2.plugin.Str,
                 'max_ee': qiime2.plugin.Float,
                 'trunc_q': qiime2.plugin.Int,
                 'min_len': qiime2.plugin.Int,
@@ -365,28 +367,42 @@ plugin.methods.register_function(
                               'denoised.'
     },
     parameter_descriptions={
+        'front': 'Sequence of an adapter ligated to the 5\' end. The adapter '
+                 'and any preceding bases are trimmed.Can contain IUPAC '
+                 'ambiguous nucleotide codes. Primers are removed before '
+                 'trim and filter step. Reads that do not contain the primer are discarded.'
+                 'Each read is re-oriented if the reverse complement of the read is a better '
+                 'match to the provided primer sequence. This is recommended for PacBio CCS '
+                 'reads, which come in a random mix of forward and reverse-complement orientations.',
+        'adapter': 'Sequence of an adapter ligated to the 3\' end. The adapter '
+                 'and any preceding bases are trimmed.Can contain IUPAC '
+                 'ambiguous nucleotide codes. Primers are removed before '
+                 'trim and filter step. Reads that do not contain the primer are discarded.',
+        'max_mismatch': 'The number of mismatches to tolerate when matching reads to primer sequences '
+                        '- see http://benjjneb.github.io/dada2/ for complete details.',
+        'indels': 'Allow insertions or deletions of bases when matching adapters. '
+                  'Note that primer matchingcan be significantly slower, currently about 4x slower',
         'trunc_len': 'Position at which sequences should be truncated due to '
                      'decrease in quality. This truncates the 3\' end of the '
                      'of the input sequences, which will be the bases that '
                      'were sequenced in the last cycles. Reads that are '
                      'shorter than this value will be discarded. If 0 is '
                      'provided, no truncation or length filtering will be '
-                     'performed',
+                     'performed. Note: Since Pacbio CCS sequences were normally '
+                     'with very high quality scores, there is no need to truncate '
+                     'the Pacbio CCS sequences.',
         'trim_left': 'Position at which sequences should be trimmed due to '
                      'low quality. This trims the 5\' end of the '
                      'of the input sequences, which will be the bases that '
                      'were sequenced in the first cycles.',
-        'front': 'Sequence of an adapter ligated to the 5\' end. The adapter '
-                 'and any preceding bases are trimmed.',
-        'adapter': 'Sequence of an adapter ligated to the 3\' end. The adapter '
-                 'and any preceding bases are trimmed.',
         'max_ee': 'Reads with number of expected errors higher than this '
                   'value will be discarded.',
         'trunc_q': 'Reads are truncated at the first instance of a quality '
                    'score less than or equal to this value. If the resulting '
                    'read is then shorter than `trunc_len`, it is discarded.',
         'min_len': 'Remove reads with length less than minLen. minLen is enforced '
-                   'after trimming and truncation. For 16S Pacbio CCS, suggest 1000. Default is 20',
+                   'after trimming and truncation. For 16S Pacbio CCS, '
+                   'suggest 1000.',
         'max_len': 'Remove reads prior to trimming or truncation which are '
                    'longer than this value. If 0 is provided no reads will '
                    'be removed based on length. For 16S Pacbio CCS, suggest 1600.',
@@ -437,7 +453,8 @@ plugin.methods.register_function(
     },
     name='Denoise and dereplicate single-end Pacbio CCS',
     description='This method denoises single-end Pacbio CCS sequences, '
-                'dereplicates them, and filters chimeras.'
+                'dereplicates them, and filters chimeras. '
+                'Tutorial and workflow: https://github.com/benjjneb/LRASManuscript'
 )
 
 
