@@ -369,19 +369,19 @@ plugin.methods.register_function(
     parameter_descriptions={
         'front': 'Sequence of an adapter ligated to the 5\' end. The adapter '
                  'and any preceding bases are trimmed.Can contain IUPAC '
-                 'ambiguous nucleotide codes. Primers are removed before '
+                 'ambiguous nucleotide codes. Note, primer direction is 5\' to 3\'. Primers are removed before '
                  'trim and filter step. Reads that do not contain the primer are discarded.'
                  'Each read is re-oriented if the reverse complement of the read is a better '
                  'match to the provided primer sequence. This is recommended for PacBio CCS '
                  'reads, which come in a random mix of forward and reverse-complement orientations.',
         'adapter': 'Sequence of an adapter ligated to the 3\' end. The adapter '
                  'and any preceding bases are trimmed.Can contain IUPAC '
-                 'ambiguous nucleotide codes. Primers are removed before '
+                 'ambiguous nucleotide codes. Note, primer direction is 5\' to 3\'. Primers are removed before '
                  'trim and filter step. Reads that do not contain the primer are discarded.',
         'max_mismatch': 'The number of mismatches to tolerate when matching reads to primer sequences '
                         '- see http://benjjneb.github.io/dada2/ for complete details.',
         'indels': 'Allow insertions or deletions of bases when matching adapters. '
-                  'Note that primer matchingcan be significantly slower, currently about 4x slower',
+                  'Note that primer matching can be significantly slower, currently about 4x slower',
         'trunc_len': 'Position at which sequences should be truncated due to '
                      'decrease in quality. This truncates the 3\' end of the '
                      'of the input sequences, which will be the bases that '

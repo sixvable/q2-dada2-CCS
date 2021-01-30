@@ -375,34 +375,6 @@ def denoise_ccs(demultiplexed_seqs: SingleLanePerSampleSingleEndFastqDirFmt,
                  n_threads: int = 1, n_reads_learn: int = 1000000,
                  hashed_feature_ids: bool = True
                  ) -> (biom.Table, DNAIterator, qiime2.Metadata):
-    return _denoise_ccs(
-        demultiplexed_seqs=demultiplexed_seqs,
-        front=front,
-        adapter=adapter,
-        max_mismatch=max_mismatch,
-        indels=indels,
-        trunc_len=trunc_len,
-        trim_left=trim_left,
-        max_ee=max_ee,
-        trunc_q=trunc_q,
-        min_len=min_len,
-        max_len=max_len,
-        pooling_method=pooling_method,
-        chimera_method=chimera_method,
-        min_fold_parent_over_abundance=min_fold_parent_over_abundance,
-        n_threads=n_threads,
-        n_reads_learn=n_reads_learn,
-        hashed_feature_ids=hashed_feature_ids,
-        homopolymer_gap_penalty='NULL',
-        band_size='32')
-
-
-def _denoise_ccs(demultiplexed_seqs, front, adapter, max_mismatch,
-                    indels, trunc_len, trim_left, max_ee, trunc_q,
-                    min_len, max_len, pooling_method, chimera_method,
-                    min_fold_parent_over_abundance,
-                    n_threads, n_reads_learn, hashed_feature_ids,
-                    homopolymer_gap_penalty, band_size):
     _check_inputs(**locals())
     if trunc_len != 0 and trim_left >= trunc_len:
         raise ValueError("trim_left (%r) must be smaller than trunc_len (%r)"
@@ -427,8 +399,7 @@ def _denoise_ccs(demultiplexed_seqs, front, adapter, max_mismatch,
                str(trunc_len), str(trim_left), str(max_ee), str(trunc_q),
                str(min_len), str(max_len), str(pooling_method),
                str(chimera_method), str(min_fold_parent_over_abundance),
-               str(n_threads), str(n_reads_learn), str(homopolymer_gap_penalty),
-               str(band_size)]
+               str(n_threads), str(n_reads_learn)]
         try:
             run_commands([cmd])
         except subprocess.CalledProcessError as e:

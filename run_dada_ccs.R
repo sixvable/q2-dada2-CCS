@@ -7,7 +7,7 @@
 # for DADA2.
 #
 # Ex: Rscript run_dada_single.R input_dir output.tsv track.tsv primer_removed_dir filtered_dir
-# front adapter 2 FALSE 0 0 2.0 2 20 Inf pseudo pooled 1.0 0 1000000 NULL 32
+# front adapter 2 FALSE 0 0 2.0 2 20 Inf pseudo pooled 1.0 0 1000000
 ####################################################
 
 ####################################################
@@ -115,21 +115,8 @@
 #                 Special values: 0 - Use all input reads.
 #    Ex: 1000000
 #
-### GLOBAL OPTION ARGUMENTS ###
-#
-# 21) HOMOPOLYMER_GAP_PENALTY - The cost of gaps in homopolymer regions (>=3 repeated bases).
-#                               Default is NULL, which causes homopolymer gaps
-#                               to be treated as normal gaps.
-#    Ex: -1
-#
-# 22) BAND_SIZE - When set, banded Needleman-Wunsch alignments are performed.
-#                 The default value of BAND_SIZE is 16. Setting BAND_SIZE to a negative
-#                 number turns off banding (i.e. full Needleman-Wunsch).
-#    Ex: 32
 #
 #
-
-
 
 cat(R.version$version.string, "\n")
 errQuit <- function(mesg, status=1) { message("Error: ", mesg); q(status=status) }
@@ -156,10 +143,6 @@ chimeraMethod <- args[[17]]
 minParentFold <- as.numeric(args[[18]])
 nthreads <- as.integer(args[[19]])
 nreads.learn <- as.integer(args[[20]])
-# The following args are not directly exposed to end users in q2-dada2,
-# but rather indirectly, via the methods `denoise-single` and `denoise-pyro`.
-HOMOPOLYMER_GAP_PENALTY <- if (args[[21]]=='NULL') NULL else as.integer(args[[21]])
-BAND_SIZE <- as.integer(args[[22]])
 
 ### VALIDATE ARGUMENTS ###
 
@@ -234,8 +217,8 @@ if(length(filts) == 0) { # All reads were filtered out
 ### LEARN ERROR RATES ###
 # Dereplicate enough samples to get nreads.learn total reads
 cat("3) Learning Error Rates\n")
-err <- suppressWarnings(learnErrors(filts, nreads=nreads.learn,errorEstimationFunction=dada2:::PacBioErrfun, multithread=multithread,
-                   HOMOPOLYMER_GAP_PENALTY=HOMOPOLYMER_GAP_PENALTY, BAND_SIZE=BAND_SIZE))
+err <- suppressWarnings(learnErrors(filts, nreads=nreads.learn,errorEstimationFunction=dada2:::PacBioErrfun,
+                                    multithread=multithread,BAND_SIZE=32))
 
 ### PROCESS ALL SAMPLES ###
 # Loop over rest in streaming fashion with learned error rates
@@ -245,8 +228,7 @@ cat("\n")
 for(j in seq(length(filts))) {
   drp <- derepFastq(filts[[j]])
   dds[[j]] <- dada(drp, err=err, multithread=multithread,
-                   HOMOPOLYMER_GAP_PENALTY=HOMOPOLYMER_GAP_PENALTY,
-                   BAND_SIZE=BAND_SIZE, verbose=FALSE)
+                   BAND_SIZE=32, verbose=FALSE)
   cat(".")
 }
 cat("\n")
@@ -264,8 +246,7 @@ if(poolMethod == "pseudo") {
     drp <- derepFastq(filts[[j]])
     dds[[j]] <- dada(drp, err=err, multithread=multithread,
                      priors = pseudo_priors,
-                     HOMOPOLYMER_GAP_PENALTY=HOMOPOLYMER_GAP_PENALTY,
-                     BAND_SIZE=BAND_SIZE, verbose=FALSE)
+                     BAND_SIZE=32, verbose=FALSE)
     cat(".")
   }
   cat("\n")
