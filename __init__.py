@@ -11,8 +11,10 @@ from ._version import get_versions
 from ._stats import DADA2Stats, DADA2StatsDirFmt, DADA2StatsFormat
 
 
-__version__ = get_versions()['version']
+__version__ = get_versions()["version"]
 del get_versions
 
-__all__ = ['denoise_single', 'denoise_paired', 'denoise_pyro', 'denoise_ccs', 'DADA2Stats',
-           'DADA2StatsFormat', 'DADA2StatsDirFmt']
+__all__ = [
+    "denoise_single", "denoise_paired", "denoise_pyro", "denoise_ccs",
+    "DADA2Stats", "DADA2StatsFormat", "DADA2StatsDirFmt",
+]
