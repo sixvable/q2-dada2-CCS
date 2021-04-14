@@ -126,14 +126,10 @@
 #
 
 cat(R.version$version.string, "\n")
-errQuit <- function(mesg, status = 1) {
-  message("Error: ", mesg)
-  q(status = status)
-}
+errQuit <- function(mesg, status=1) { message("Error: ", mesg); q(status=status) }
 args <- commandArgs(TRUE)
 
-# Assign each of the arguments, in positional order,
-# to an appropriately named R variable
+# Assign each of the arguments, in positional order, to an appropriately named R variable
 inp.dir <- args[[1]]
 out.path <- args[[2]]
 out.track <- args[[3]]
@@ -160,31 +156,31 @@ nreads.learn <- as.integer(args[[20]])
 # Input directory is expected to contain .fastq.gz file(s)
 # that have not yet been filtered and globally trimmed
 # to the same length.
-if (!dir.exists(inp.dir)) {
+if(!dir.exists(inp.dir)) {
   errQuit("Input directory does not exist.")
 } else {
-  unfilts <- list.files(inp.dir, pattern = ".fastq.gz$", full.names = TRUE)
-  if (length(unfilts) == 0) {
+  unfilts <- list.files(inp.dir, pattern=".fastq.gz$", full.names=TRUE)
+  if(length(unfilts) == 0) {
     errQuit("No input files with the expected filename format found.")
   }
 }
 
 # Output files are to be filenames (not directories) and are to be
 # removed and replaced if already present.
-for (fn in c(out.path, out.track)) {
-  if (dir.exists(fn)) {
+for(fn in c(out.path, out.track)) {
+  if(dir.exists(fn)) {
     errQuit("Output filename ", fn, " is a directory.")
-  } else if (file.exists(fn)) {
+  } else if(file.exists(fn)) {
     invisible(file.remove(fn))
   }
 }
 
 # Convert nthreads to the logical/numeric expected by dada2
-if (nthreads < 0) {
+if(nthreads < 0) {
   errQuit("nthreads must be non-negative.")
-} else if (nthreads == 0) {
+} else if(nthreads == 0) {
   multithread <- TRUE # detect and use all
-} else if (nthreads == 1) {
+} else if(nthreads == 1) {
   multithread <- FALSE
 } else {
   multithread <- nthreads
@@ -193,88 +189,70 @@ if (nthreads < 0) {
 ### LOAD LIBRARIES ###
 suppressWarnings(library(methods))
 suppressWarnings(library(dada2))
-cat(
-  "DADA2:", as.character(packageVersion("dada2")), "/",
-  "Rcpp:", as.character(packageVersion("Rcpp")), "/",
-  "RcppParallel:", as.character(packageVersion("RcppParallel")), "\n"
-)
+cat("DADA2:", as.character(packageVersion("dada2")), "/",
+    "Rcpp:", as.character(packageVersion("Rcpp")), "/",
+    "RcppParallel:", as.character(packageVersion("RcppParallel")), "\n")
 
 ### Remove Primers ###
 cat("1) Removing Primers\n")
 nop <- file.path(primer.removed.dir, basename(unfilts))
-prim <- suppressWarnings(
-  removePrimers(unfilts, nop, primerF, dada2:::rc(primerR),
-    max.mismatch = maxMismatch, allow.indels = indels,
-    orient = TRUE, verbose = TRUE
-  )
-)
-cat(ifelse(file.exists(nop), ".", "x"), sep = "")
-nop <- list.files(primer.removed.dir, pattern = ".fastq.gz$", full.names = TRUE)
+prim <- suppressWarnings(removePrimers(unfilts, nop, primerF, dada2:::rc(primerR),
+                                       max.mismatch = maxMismatch, allow.indels = indels,
+                                       orient = TRUE, verbose = TRUE))
+cat(ifelse(file.exists(nop), ".", "x"), sep="")
+nop <- list.files(primer.removed.dir, pattern=".fastq.gz$", full.names=TRUE)
 cat("\n")
-if (length(nop) == 0) { # All reads were filtered out
-  errQuit(
-    "No reads passed the Removing Primers step (Did you select the right primers?)",
-    status = 2
-  )
+if(length(nop) == 0) { # All reads were filtered out
+  errQuit("No reads passed the Removing Primers step  (Did you select the right primers?)", status=2)
 }
 
 ### TRIM AND FILTER ###
 cat("2) Filtering\n")
 filts <- file.path(filtered.dir, basename(nop))
-out <- suppressWarnings(filterAndTrim(nop, filts,
-  truncLen = truncLen, trimLeft = trimLeft,
-  maxEE = maxEE, truncQ = truncQ, rm.phix = FALSE,
-  multithread = multithread, maxLen = maxLen, minLen = minLen, minQ = 3
-))
-cat(ifelse(file.exists(filts), ".", "x"), sep = "")
-filts <- list.files(filtered.dir, pattern = ".fastq.gz$", full.names = TRUE)
+out <- suppressWarnings(filterAndTrim(nop, filts, truncLen = truncLen, trimLeft = trimLeft,
+                                      maxEE = maxEE, truncQ = truncQ, rm.phix = FALSE,
+                                      multithread = multithread, maxLen = maxLen, minLen = minLen, minQ = 3))
+cat(ifelse(file.exists(filts), ".", "x"), sep="")
+filts <- list.files(filtered.dir, pattern=".fastq.gz$", full.names=TRUE)
 cat("\n")
-if (length(filts) == 0) { # All reads were filtered out
-  errQuit("No reads passed the filter (was truncLen longer than the read length?)",
-    status = 2
-  )
+if(length(filts) == 0) { # All reads were filtered out
+  errQuit("No reads passed the filter (was truncLen longer than the read length?)", status=2)
 }
 
 ### LEARN ERROR RATES ###
 # Dereplicate enough samples to get nreads.learn total reads
 cat("3) Learning Error Rates\n")
-err <- suppressWarnings(learnErrors(filts,
-  nreads = nreads.learn, errorEstimationFunction = dada2:::PacBioErrfun,
-  multithread = multithread, BAND_SIZE = 32
-))
+err <- suppressWarnings(learnErrors(filts, nreads=nreads.learn,
+                                    errorEstimationFunction=dada2:::PacBioErrfun,
+                                    multithread=multithread, BAND_SIZE=32))
 
 ### PROCESS ALL SAMPLES ###
 # Loop over rest in streaming fashion with learned error rates
 dds <- vector("list", length(filts))
 cat("4) Denoise samples ")
 cat("\n")
-for (j in seq(length(filts))) {
+for(j in seq(length(filts))) {
   drp <- derepFastq(filts[[j]])
-  dds[[j]] <- dada(drp,
-    err = err, multithread = multithread,
-    BAND_SIZE = 32, verbose = FALSE
-  )
+  dds[[j]] <- dada(drp, err=err, multithread=multithread,
+                   BAND_SIZE=32, verbose=FALSE)
   cat(".")
 }
 cat("\n")
-if (poolMethod == "pseudo") {
+if(poolMethod == "pseudo") {
   cat("  Pseudo-pool step ")
   ### TEMPORARY, to be removed once 1.12 makes its way to Q2
-  ### Needed for now to manage pseudo-pooling memory,
-  ### as 1.10 didn't do this appropriately.
+  ### Needed for now to manage pseudo-pooling memory, as 1.10 didn't do this appropriately.
   ### pseudo_priors code copied from dada2.R
   st <- makeSequenceTable(dds)
-  pseudo_priors <- colnames(st)[colSums(st > 0) >= 2 | colSums(st) >= Inf]
+  pseudo_priors <- colnames(st)[colSums(st>0) >= 2 | colSums(st) >= Inf]
   rm(st)
   ### \pseudo_priors code copied from dada2.R
   ### code copied from previous loop through samples in this script
-  for (j in seq(length(filts))) {
+  for(j in seq(length(filts))) {
     drp <- derepFastq(filts[[j]])
-    dds[[j]] <- dada(drp,
-      err = err, multithread = multithread,
-      priors = pseudo_priors,
-      BAND_SIZE = 32, verbose = FALSE
-    )
+    dds[[j]] <- dada(drp, err=err, multithread=multithread,
+                     priors = pseudo_priors,
+                     BAND_SIZE=32, verbose=FALSE)
     cat(".")
   }
   cat("\n")
@@ -285,13 +263,9 @@ if (poolMethod == "pseudo") {
 seqtab <- makeSequenceTable(dds)
 
 ### Remove chimeras
-cat("5) Remove chimeras (method = ", chimeraMethod, ")\n", sep = "")
-if (chimeraMethod %in% c("pooled", "consensus")) {
-  seqtab.nochim <- removeBimeraDenovo(seqtab,
-    method = chimeraMethod,
-    minFoldParentOverAbundance = minParentFold,
-    multithread = multithread
-  )
+cat("5) Remove chimeras (method = ", chimeraMethod, ")\n", sep="")
+if(chimeraMethod %in% c("pooled", "consensus")) {
+  seqtab.nochim <- removeBimeraDenovo(seqtab, method=chimeraMethod, minFoldParentOverAbundance=minParentFold, multithread=multithread)
 } else { # No chimera removal, copy seqtab to seqtab.nochim
   seqtab.nochim <- seqtab
 }
@@ -299,17 +273,13 @@ if (chimeraMethod %in% c("pooled", "consensus")) {
 ### REPORT READ FRACTIONS THROUGH PIPELINE ###
 cat("6) Report read numbers through the pipeline\n")
 # Handle edge cases: Samples lost in filtering; One sample
-track <- cbind(prim, out[, 2], matrix(0, nrow = nrow(out), ncol = 2))
-colnames(track) <- c(
-  "input", "primer-removed", "filtered", "denoised", "non-chimeric"
-)
-passed.filtering <- track[, "filtered"] > 0
-track[passed.filtering, "denoised"] <- rowSums(seqtab)
-track[passed.filtering, "non-chimeric"] <- rowSums(seqtab.nochim)
-write.table(track, out.track,
-  sep = "\t", row.names = TRUE, col.names = NA,
-  quote = FALSE
-)
+track <- cbind(prim,out[ ,2], matrix(0, nrow=nrow(out), ncol=2))
+colnames(track) <- c("input", "primer-removed","filtered", "denoised", "non-chimeric")
+passed.filtering <- track[,"filtered"] > 0
+track[passed.filtering,"denoised"] <- rowSums(seqtab)
+track[passed.filtering,"non-chimeric"] <- rowSums(seqtab.nochim)
+write.table(track, out.track, sep="\t", row.names=TRUE, col.names=NA,
+	          quote=FALSE)
 
 ### WRITE OUTPUT AND QUIT ###
 # Formatting as tsv plain-text sequence table table
@@ -317,10 +287,8 @@ cat("7) Write output\n")
 seqtab.nochim <- t(seqtab.nochim) # QIIME has OTUs as rows
 col.names <- basename(filts)
 col.names[[1]] <- paste0("#OTU ID\t", col.names[[1]])
-write.table(seqtab.nochim, out.path,
-  sep = "\t",
-  row.names = TRUE, col.names = col.names, quote = FALSE
-)
+write.table(seqtab.nochim, out.path, sep="\t",
+            row.names=TRUE, col.names=col.names, quote=FALSE)
 saveRDS(seqtab.nochim, gsub("tsv", "rds", out.path)) ### TESTING
 
-q(status = 0)
+q(status=0)

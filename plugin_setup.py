@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2016-2020, QIIME 2 development team.
+# Copyright (c) 2016-2021, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -136,6 +136,8 @@ plugin.methods.register_function(
                 'max_ee_f': qiime2.plugin.Float,
                 'max_ee_r': qiime2.plugin.Float,
                 'trunc_q': qiime2.plugin.Int,
+                'min_overlap': qiime2.plugin.Int %
+                qiime2.plugin.Range(4, None),
                 'pooling_method': qiime2.plugin.Str %
                 qiime2.plugin.Choices(_POOL_OPT),
                 'chimera_method': qiime2.plugin.Str %
@@ -189,6 +191,8 @@ plugin.methods.register_function(
                     'read is then shorter than `trunc_len_f` or `trunc_len_r` '
                     '(depending on the direction of the read) it is '
                     'discarded.'),
+        'min_overlap': ('The minimum length of the overlap required for '
+                        'merging the forward and reverse reads.'),
         'pooling_method': ('The method used to pool samples for denoising. '
                            '"independent": Samples are denoised indpendently. '
                            '"pseudo": The pseudo-pooling method is used to '
@@ -363,8 +367,7 @@ plugin.methods.register_function(
              ('denoising_stats', SampleData[DADA2Stats])],
     input_descriptions={
         'demultiplexed_seqs': 'The single-end demultiplexed PacBio CCS '
-                              'sequences to be '
-                              'denoised.'
+                              'sequences to be denoised.'
     },
     parameter_descriptions={
         'front': 'Sequence of an adapter ligated to the 5\' end. '
@@ -428,9 +431,8 @@ plugin.methods.register_function(
                           '"none": No chimera removal is performed. '
                           '"pooled": All reads are pooled prior to chimera '
                           'detection. "consensus": Chimeras are detected in '
-                          'samples individually, and sequences found '
-                          'chimeric in a sufficient fraction of samples are '
-                          'removed.',
+                          'samples individually, and sequences found chimeric '
+                          'in a sufficient fraction of samples are removed.',
         'min_fold_parent_over_abundance':
             'The minimum abundance of potential parents of a sequence being '
             'tested as chimeric, expressed as a fold-change versus the '
@@ -443,8 +445,7 @@ plugin.methods.register_function(
                      'be used.',
         'n_reads_learn': 'The number of reads to use when training the '
                          'error model. Smaller numbers will result in a '
-                         'shorter run time but a less reliable error '
-                         'model.',
+                         'shorter run time but a less reliable error model.',
         'hashed_feature_ids': 'If true, the feature ids in the resulting '
                               'table will be presented as hashes of the '
                               'sequences defining each feature. The hash '

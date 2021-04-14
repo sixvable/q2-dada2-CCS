@@ -2,7 +2,7 @@
 
 Implement `qiime dada denoise_ccs` in [q2-dada2 plugin](https://github.com/qiime2/q2-dada2) for denoising Pacbio CCS long reads.
 
-Only test on **qiime2-2020.11** 
+Test on **qiime2-2021.2** 
 
 Changing following files in ***/path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/***
 
@@ -45,7 +45,7 @@ Changing following files in ***/path/to/your/conda/envs/qiime2-version/lib/pytho
    
       5. return the stats log to a new function `_denoise_helper2` based on `_denoise_helper`
 
-   2. define the new function `_denoise_helper2` based on `_denoise_helper` for exposing the *PRIMER REMOVING* step stat in final **denoise_stats.qza**, including *primer-removed* and *percentage of input primer-removed*
+   2. change the function `_denoise_helper` for exposing the *PRIMER REMOVING* step stat in final **denoise_stats.qza**, including *primer-removed* and *percentage of input primer-removed*
    
    3. add new parameters to the `_valid_inputs` for paramters validation:
       - ***max_mismatch*** : _WHOLE_NUM
