@@ -6,9 +6,9 @@ Test on **qiime2-2021.2**
 
 ## Usage
 
-- Overwrite the file **\_\_init\_\_.py**, **plugin_setup.py**, and **\_denoise.py** in */path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/* with the file in this repo.
-- put a new file **run_dada_ccs.R** in */path/to/your/conda/envs/qiime2-version/bin* and use command `chmod u+x ./run_dada_ccs.R` to make sure you have execution authority.
-- use command `qiime dev refresh-cache` to refresh your QIIME2 environment.
+1. Overwrite the file **\_\_init\_\_.py**, **plugin_setup.py**, and **\_denoise.py** in */path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/* with the file in this repo.
+2. put a new file **run_dada_ccs.R** in */path/to/your/conda/envs/qiime2-version/bin* and use command `chmod u+x ./run_dada_ccs.R` to make sure you have execution authority.
+3. use command `qiime dev refresh-cache` to refresh your QIIME2 environment.
 
 ## Detail 
 
