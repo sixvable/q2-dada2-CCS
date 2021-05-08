@@ -4,7 +4,15 @@ Implement `qiime dada denoise_ccs` in [q2-dada2 plugin](https://github.com/qiime
 
 Test on **qiime2-2021.4** 
 
-Changing following files in ***/path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/***
+## Usage
+
+1. Overwrite the file **\_\_init\_\_.py**, **plugin_setup.py**, and **\_denoise.py** in */path/to/your/conda/envs/qiime2-version/lib/python3.6/site-packages/q2_dada2/* with the file in this repo.
+2. put a new file **run_dada_ccs.R** in */path/to/your/conda/envs/qiime2-version/bin* and use command `chmod u+x ./run_dada_ccs.R` to make sure you have execution authority.
+3. use command `qiime dev refresh-cache` to refresh your QIIME2 environment.
+
+## Detail 
+
+Changing following files in ***/path/to/your/conda/envs/qiime2-version/lib/python3.8/site-packages/q2_dada2/***
 
 1. **\_\_init\_\_.py** : import a new function `denoise_ccs` from **\_denoise.py**
 
@@ -43,7 +51,7 @@ Changing following files in ***/path/to/your/conda/envs/qiime2-version/lib/pytho
          - change the path of  temporary directory *filt_fp*
          - add new arguments in `run_dada_ccs.R` for the new parameters in `denoise_ccs`
    
-      5. return the stats log to a new function `_denoise_helper2` based on `_denoise_helper`
+      5. return the stats log of primer removing step to function `_denoise_helper`
 
    2. change the function `_denoise_helper` for exposing the *PRIMER REMOVING* step stat in final **denoise_stats.qza**, including *primer-removed* and *percentage of input primer-removed*
    
