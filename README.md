@@ -2,9 +2,9 @@
 
 Implement `qiime dada denoise_ccs` in [q2-dada2 plugin](https://github.com/qiime2/q2-dada2) for denoising Pacbio CCS long reads.
 
-~~Test on **qiime2-2021.4** 
+~~Test on **qiime2-2021.4** ~~
 
-**Qiime2 v2022.2 has offically supported Pacbio CCS denoise.
+Qiime2 v2022.2 has offically supported Pacbio CCS denoise.
 
 ## Usage
 
